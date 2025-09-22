@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "shards-{{COMPONENT-NAME}}"
+dynamic = ["version"]
+description = '{{COMPONENT-DESCRIPTION}}'
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+keywords = [
+  "cli",
+  "command line",
+]
+authors = [ { name = "dev", email = "dev4dojo@outlook.com" },]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = []
+
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/shards"]
+
+[tool.hatch.version]
+path = "src/shards/{{COMPONENT-NAME}}/__about__.py"
+
+[tool.hatch.envs.test.scripts]
+test = "pytest"
+test-cov = "coverage run -m pytest && coverage report --show-missing"
+
+[tool.hatch.envs.default]
+dependencies = [
+  "pytest",
+  "pytest-coverage",
+  "ruff",
+]
+
+[tool.coverage.run]
+branch = true
+relative_files = true
+source = ["src/shards"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+]
+omit = [
+    "*/tests/*",
+    "*/__about__.py",
+]
