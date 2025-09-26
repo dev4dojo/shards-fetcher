@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "shards-{{COMPONENT-NAME}}"
+name = "shards-fetcher"
 dynamic = ["version"]
-description = '{{COMPONENT-DESCRIPTION}}'
+description = 'The library for fetching web content'
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -23,22 +23,25 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = []
+dependencies = [
+  "aiohttp==3.12.15",
+]
 
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/shards"]
 
 [tool.hatch.version]
-path = "src/shards/{{COMPONENT-NAME}}/__about__.py"
+path = "src/shards/fetcher/__about__.py"
 
 [tool.hatch.envs.test.scripts]
-test = "pytest"
-test-cov = "coverage run -m pytest && coverage report --show-missing"
+all = "pytest"
+cov = "coverage run -m pytest && coverage report --show-missing"
 
 [tool.hatch.envs.default]
 dependencies = [
   "pytest",
+  "pytest-asyncio",
   "pytest-coverage",
   "ruff",
 ]
