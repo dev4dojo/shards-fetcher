@@ -30,8 +30,7 @@ async def test_fetcher_get(monkeypatch, fake_session):
     """
     monkeypatch.setattr("aiohttp.ClientSession", lambda *args, **kwargs: fake_session)
 
-    fetcher = Fetcher()
-    try:
+    async with Fetcher() as fetcher:
         resource = await fetcher.fetch(DEFAULT_TEST_URL)
         assert isinstance(resource, Resource)
         assert resource.url == DEFAULT_TEST_URL
@@ -40,9 +39,6 @@ async def test_fetcher_get(monkeypatch, fake_session):
         assert resource.metadata["encoding"] == "utf-8"
         assert b"Hello" in resource.content
         assert isinstance(resource.hash, str)
-    finally:
-        await fetcher.aclose()
-    # assert False
 
 
 def test_fetcher_get_sync(monkeypatch, fake_session):
@@ -67,8 +63,7 @@ async def test_fetcher_post(monkeypatch, fake_session):
     Test fetching a simple HTML page successfully. Method: POST
     """
     monkeypatch.setattr("aiohttp.ClientSession", lambda *args, **kwargs: fake_session)
-    fetcher = Fetcher()
-    try:
+    async with Fetcher() as fetcher:
         resource = await fetcher.fetch(DEFAULT_TEST_URL, method=HttpMethod.POST)
         assert isinstance(resource, Resource)
         assert resource.url == DEFAULT_TEST_URL
@@ -77,8 +72,6 @@ async def test_fetcher_post(monkeypatch, fake_session):
         assert resource.metadata["encoding"] == "utf-8"
         assert b"Hello" in resource.content
         assert isinstance(resource.hash, str)
-    finally:
-        await fetcher.aclose()
 
 
 @pytest.mark.asyncio
@@ -86,12 +79,9 @@ async def test_fetcher_unsupported_method(monkeypatch):
     """
     Test fetching a simple HTML page successfully. Method: PUT (unsupported)
     """
-    fetcher = Fetcher()
-    try:
+    async with Fetcher() as fetcher:
         with pytest.raises(FetchError):
             await fetcher.fetch(DEFAULT_TEST_URL, method="PUT")
-    finally:
-        await fetcher.aclose()
 
 
 @pytest.mark.asyncio
@@ -101,8 +91,7 @@ async def test_fetcher_ensure_session(monkeypatch, fake_session):
     """
     monkeypatch.setattr("aiohttp.ClientSession", lambda *args, **kwargs: fake_session)
 
-    fetcher = Fetcher()
-    try:
+    async with Fetcher() as fetcher:
         resource = await fetcher.fetch(DEFAULT_TEST_URL)
 
         assert fetcher.session is not None
@@ -113,8 +102,6 @@ async def test_fetcher_ensure_session(monkeypatch, fake_session):
         assert b"Hello" in resource.content
 
         resource = await fetcher.fetch(DEFAULT_TEST_URL)
-    finally:
-        await fetcher.aclose()
 
 
 @pytest.mark.asyncio
@@ -125,14 +112,11 @@ async def test_fetcher_ensure_session_closed(monkeypatch, fake_session):
 
     monkeypatch.setattr("aiohttp.ClientSession", lambda *args, **kwargs: fake_session)
 
-    fetcher = Fetcher()
-    try:
+    async with Fetcher() as fetcher:
         await fetcher.fetch(DEFAULT_TEST_URL)
         assert fetcher.session is not None
-    finally:
-        await fetcher.aclose()
 
-    await fetcher.aclose()
+    await fetcher.close()
     assert fetcher.session is None
 
 
@@ -160,15 +144,11 @@ async def test_fetcher_fetch_with_retries(monkeypatch):
             hash="dummyhash",
         )
 
-    fetcher = Fetcher(retries=3, timeout=0.1)
-    monkeypatch.setattr(fetcher, "_fetch_once", mock_fetch_once)
-
-    try:
+    async with Fetcher(retries=3, timeout=0.1) as fetcher:
+        monkeypatch.setattr(fetcher, "_fetch_once", mock_fetch_once)
         resource = await fetcher.fetch(DEFAULT_TEST_URL)
         assert resource.content == b"Recovered content"
         assert call_count == 2  # Should have retried twice before succeeding
-    finally:
-        await fetcher.aclose()
 
 
 @pytest.mark.asyncio
@@ -195,30 +175,8 @@ async def test_fetcher_fetch_with_exceeding_retries(monkeypatch):
             hash="dummyhash",
         )
 
-    fetcher = Fetcher(retries=1, timeout=0.1)
-    monkeypatch.setattr(fetcher, "_fetch_once", mock_fetch_once)
-
-    try:
+    async with Fetcher(retries=1, timeout=0.1) as fetcher:
+        monkeypatch.setattr(fetcher, "_fetch_once", mock_fetch_once)
         with pytest.raises(FetchError):
             resp = await fetcher.fetch(DEFAULT_TEST_URL)
             assert resp is None
-    finally:
-        await fetcher.aclose()
-
-
-@pytest.mark.asyncio
-async def test_fetcher_context_manager(monkeypatch, fake_session):
-    """
-    Test using Fetcher as an async context manager.
-    """
-    monkeypatch.setattr("aiohttp.ClientSession", lambda *args, **kwargs: fake_session)
-
-    async with Fetcher() as fetcher:
-        resource = await fetcher.fetch(DEFAULT_TEST_URL)
-        assert isinstance(resource, Resource)
-        assert resource.url == DEFAULT_TEST_URL
-        assert resource.metadata["status_code"] == 200
-        assert resource.metadata["mime"] == "text/html"
-        assert resource.metadata["encoding"] == "utf-8"
-        assert b"Hello" in resource.content
-        assert isinstance(resource.hash, str)
