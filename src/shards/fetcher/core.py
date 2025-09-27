@@ -53,7 +53,7 @@ class Fetcher:
         """
         Async context manager exit. Ensures the session is closed.
         """
-        await self.aclose()
+        await self.close()
 
     async def _ensure_session(self):
         """
@@ -64,7 +64,7 @@ class Fetcher:
             timeout = aiohttp.ClientTimeout(total=self.timeout)
             self.session = aiohttp.ClientSession(timeout=timeout)
 
-    async def aclose(self):
+    async def close(self):
         """
         Close the aiohttp ClientSession if it exists.
         """
